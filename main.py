@@ -10,17 +10,14 @@ state = {
     "companies": 3
 }
 
-def simulate():
+def step_world():
     state["tick"] += 1
-    state["gdp"] += random.randint(-50, 100)
-    state["companies"] += random.choice([-1, 0, 1])
-    if state["companies"] < 1:
-        state["companies"] = 1
+    state["gdp"] += random.randint(-30, 80)
     return state
 
 @app.get("/step")
 def step():
-    return simulate()
+    return step_world()
 
 @app.get("/state")
 def get_state():
