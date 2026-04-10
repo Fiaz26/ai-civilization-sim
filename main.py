@@ -4,7 +4,7 @@ import random
 app = FastAPI()
 
 # -----------------------
-# WORLD (MULTI CIVS)
+# WORLD STATE
 # -----------------------
 world = {
     "tick": 0,
@@ -18,57 +18,80 @@ world = {
         },
         {
             "id": "Earth-Beta",
-            "gdp": 800,
-            "agents": 8,
+            "gdp": 900,
+            "agents": 9,
             "companies": 2,
             "alive": True
         }
-    ]
+    ],
+    "trade_volume": 0
 }
 
 # -----------------------
-# UPDATE ONE CIV
+# UPDATE CIV ECONOMY
 # -----------------------
 def update_civ(civ):
     if not civ["alive"]:
         return
 
-    # agents impact economy
-    agent_power = civ["agents"] * random.randint(1, 5)
+    production = civ["agents"] * random.randint(1, 5)
+    business = civ["companies"] * random.randint(5, 15)
+    event = random.randint(-15, 25)
 
-    # companies impact economy
-    company_power = civ["companies"] * random.randint(5, 15)
+    civ["gdp"] += production + business + event
 
-    # randomness (events)
-    event = random.randint(-20, 30)
-
-    civ["gdp"] += agent_power + company_power + event
-
-    # population growth
     civ["agents"] += random.choice([0, 1])
 
-    # company growth/failure
-    change = random.choice([-1, 0, 1])
-    civ["companies"] += change
+    civ["companies"] += random.choice([-1, 0, 1])
     if civ["companies"] < 1:
         civ["companies"] = 1
 
-    # collapse condition
     if civ["gdp"] < 300:
         civ["alive"] = False
+
+# -----------------------
+# TRADE SYSTEM
+# -----------------------
+def trade_between(civ_a, civ_b):
+    if not civ_a["alive"] or not civ_b["alive"]:
+        return 0
+
+    # trade strength based on economy size
+    trade_value = int((civ_a["gdp"] + civ_b["gdp"]) * random.uniform(0.01, 0.03))
+
+    # transfer effect
+    if civ_a["gdp"] > civ_b["gdp"]:
+        civ_a["gdp"] += trade_value
+        civ_b["gdp"] += int(trade_value * 0.6)
+    else:
+        civ_b["gdp"] += trade_value
+        civ_a["gdp"] += int(trade_value * 0.6)
+
+    return trade_value
 
 # -----------------------
 # SIMULATION STEP
 # -----------------------
 def step_world():
     world["tick"] += 1
+    world["trade_volume"] = 0
 
+    # update civilizations
     for civ in world["civilizations"]:
         update_civ(civ)
 
+    # trade phase (pairwise)
+    civs = world["civilizations"]
+
+    for i in range(len(civs)):
+        for j in range(i + 1, len(civs)):
+            trade_value = trade_between(civs[i], civs[j])
+            world["trade_volume"] += trade_value
+
     return {
         "tick": world["tick"],
-        "civilizations": world["civilizations"]
+        "civilizations": world["civilizations"],
+        "global_trade": world["trade_volume"]
     }
 
 # -----------------------
