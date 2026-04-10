@@ -1,87 +1,62 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>AI Civilization Dashboard</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AI Civilization Live Dashboard</title>
 
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #0f172a;
-      color: white;
-      margin: 0;
-      padding: 20px;
-    }
+<style>
+  body {
+    font-family: Arial;
+    background: #0f172a;
+    color: white;
+    padding: 15px;
+  }
 
-    h1 {
-      text-align: center;
-      color: #38bdf8;
-    }
+  h1 {
+    text-align: center;
+    color: #38bdf8;
+  }
 
-    button {
-      width: 100%;
-      padding: 14px;
-      font-size: 16px;
-      background: #22c55e;
-      border: none;
-      color: white;
-      border-radius: 10px;
-      cursor: pointer;
-      margin-bottom: 20px;
-    }
+  button {
+    width: 100%;
+    padding: 14px;
+    margin: 8px 0;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    cursor: pointer;
+  }
 
-    button:hover {
-      background: #16a34a;
-    }
+  .start { background: #22c55e; color: white; }
+  .stop { background: #ef4444; color: white; }
 
-    .card {
-      background: #1e293b;
-      padding: 12px;
-      margin-bottom: 10px;
-      border-radius: 10px;
-    }
-
-    .status-alive {
-      color: #22c55e;
-    }
-
-    .status-dead {
-      color: #ef4444;
-    }
-
-    pre {
-      background: #0b1220;
-      padding: 10px;
-      border-radius: 10px;
-      overflow-x: auto;
-    }
-  </style>
+  .card {
+    background: #1e293b;
+    padding: 12px;
+    margin-top: 10px;
+    border-radius: 10px;
+  }
+</style>
 </head>
 
 <body>
 
-<h1>🌍 AI Civilization Dashboard</h1>
+<h1>🌍 AI Civilization Live World</h1>
 
-<button onclick="step()">▶ Run Simulation Step</button>
+<button class="start" onclick="start()">▶ Start Simulation</button>
+<button class="stop" onclick="stop()">⛔ Stop Simulation</button>
 
-<div id="output"></div>
+<div id="output">Click start to begin simulation</div>
 
 <script>
 const API = "https://ai-civilization-sim-production.up.railway.app";
 
-async function step() {
-  const output = document.getElementById("output");
-  output.innerHTML = "⏳ Running simulation...";
+let interval = null;
 
+async function fetchData() {
   try {
     const res = await fetch(API + "/step");
-
-    if (!res.ok) {
-      output.innerHTML = "❌ Server Error: " + res.status;
-      return;
-    }
-
     const data = await res.json();
 
     let html = `
@@ -98,18 +73,28 @@ async function step() {
           <p>💰 GDP: ${c.gdp}</p>
           <p>👥 Agents: ${c.agents}</p>
           <p>🏢 Companies: ${c.companies}</p>
-          <p>Status: <b class="${c.alive ? 'status-alive' : 'status-dead'}">
-            ${c.alive ? 'Alive' : 'Collapsed'}
-          </b></p>
+          <p>Status: ${c.alive ? "Alive" : "Collapsed"}</p>
         </div>
       `;
     });
 
-    output.innerHTML = html;
+    document.getElementById("output").innerHTML = html;
 
   } catch (err) {
-    output.innerHTML = "❌ Fetch Error: " + err.message;
+    document.getElementById("output").innerHTML =
+      "❌ Error: " + err.message;
   }
+}
+
+function start() {
+  if (interval) return;
+  fetchData();
+  interval = setInterval(fetchData, 3000);
+}
+
+function stop() {
+  clearInterval(interval);
+  interval = null;
 }
 </script>
 
