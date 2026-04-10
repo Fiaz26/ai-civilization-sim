@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>AI Civilization Dashboard</title>
+  <style>
+    body {
+      font-family: Arial;
+      background: #0f172a;
+      color: white;
+      padding: 20px;
+    }
+
+    h1 { color: #38bdf8; }
+
+    .card {
+      background: #1e293b;
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 10px;
+    }
+
+    button {
+      padding: 10px 15px;
+      background: #22c55e;
+      border: none;
+      color: white;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #16a34a;
+    }
+  </style>
+</head>
+
+<body>
+
+<h1>🌍 AI Civilization Dashboard</h1>
+
+<button onclick="step()">▶ Run Simulation Step</button>
+
+<div id="output"></div>
+
+<script>
+const API = "https://ai-civilization-sim-production.up.railway.app";
+
+async function step() {
+  const res = await fetch(API + "/step");
+  const data = await res.json();
+
+  let html = `
+    <div class="card">
+      <h2>Tick: ${data.tick}</h2>
+      <p>Global Trade: ${data.global_trade}</p>
+    </div>
+  `;
+
+  data.civilizations.forEach(c => {
+    html += `
+      <div class="card">
+        <h3>${c.id}</h3>
+        <p>GDP: ${c.gdp}</p>
+        <p>Agents: ${c.agents}</p>
+        <p>Companies: ${c.companies}</p>
+        <p>Status: ${c.alive ? "Alive" : "Collapsed"}</p>
+      </div>
+    `;
+  });
+
+  document.getElementById("output").innerHTML = html;
+}
+</script>
+
+</body>
+</html>
