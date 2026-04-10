@@ -1,35 +1,60 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>AI Civilization Dashboard</title>
+
   <style>
     body {
-      font-family: Arial;
+      font-family: Arial, sans-serif;
       background: #0f172a;
       color: white;
+      margin: 0;
       padding: 20px;
     }
 
-    h1 { color: #38bdf8; }
-
-    .card {
-      background: #1e293b;
-      padding: 15px;
-      margin: 10px 0;
-      border-radius: 10px;
+    h1 {
+      text-align: center;
+      color: #38bdf8;
     }
 
     button {
-      padding: 10px 15px;
+      width: 100%;
+      padding: 14px;
+      font-size: 16px;
       background: #22c55e;
       border: none;
       color: white;
-      border-radius: 8px;
+      border-radius: 10px;
       cursor: pointer;
+      margin-bottom: 20px;
     }
 
     button:hover {
       background: #16a34a;
+    }
+
+    .card {
+      background: #1e293b;
+      padding: 12px;
+      margin-bottom: 10px;
+      border-radius: 10px;
+    }
+
+    .status-alive {
+      color: #22c55e;
+    }
+
+    .status-dead {
+      color: #ef4444;
+    }
+
+    pre {
+      background: #0b1220;
+      padding: 10px;
+      border-radius: 10px;
+      overflow-x: auto;
     }
   </style>
 </head>
@@ -46,29 +71,45 @@
 const API = "https://ai-civilization-sim-production.up.railway.app";
 
 async function step() {
-  const res = await fetch(API + "/step");
-  const data = await res.json();
+  const output = document.getElementById("output");
+  output.innerHTML = "⏳ Running simulation...";
 
-  let html = `
-    <div class="card">
-      <h2>Tick: ${data.tick}</h2>
-      <p>Global Trade: ${data.global_trade}</p>
-    </div>
-  `;
+  try {
+    const res = await fetch(API + "/step");
 
-  data.civilizations.forEach(c => {
-    html += `
+    if (!res.ok) {
+      output.innerHTML = "❌ Server Error: " + res.status;
+      return;
+    }
+
+    const data = await res.json();
+
+    let html = `
       <div class="card">
-        <h3>${c.id}</h3>
-        <p>GDP: ${c.gdp}</p>
-        <p>Agents: ${c.agents}</p>
-        <p>Companies: ${c.companies}</p>
-        <p>Status: ${c.alive ? "Alive" : "Collapsed"}</p>
+        <h2>Tick: ${data.tick}</h2>
+        <p>🌐 Global Trade: ${data.global_trade}</p>
       </div>
     `;
-  });
 
-  document.getElementById("output").innerHTML = html;
+    data.civilizations.forEach(c => {
+      html += `
+        <div class="card">
+          <h3>${c.id}</h3>
+          <p>💰 GDP: ${c.gdp}</p>
+          <p>👥 Agents: ${c.agents}</p>
+          <p>🏢 Companies: ${c.companies}</p>
+          <p>Status: <b class="${c.alive ? 'status-alive' : 'status-dead'}">
+            ${c.alive ? 'Alive' : 'Collapsed'}
+          </b></p>
+        </div>
+      `;
+    });
+
+    output.innerHTML = html;
+
+  } catch (err) {
+    output.innerHTML = "❌ Fetch Error: " + err.message;
+  }
 }
 </script>
 
