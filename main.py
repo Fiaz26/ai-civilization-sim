@@ -1,10 +1,16 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Header
 from fastapi.middleware.cors import CORSMiddleware
 
-# ✅ FIRST create app
+# ===== IMPORT YOUR MODULES =====
+from engine import run_simulation
+from auth import create_user, login_user
+from billing import get_user_plan
+from payments import create_payment, get_payments, approve_payment
+
+# ===== CREATE APP =====
 app = FastAPI()
 
-# ✅ THEN use it
+# ===== ENABLE CORS =====
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -13,108 +19,42 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ✅ THEN routes
+# ===== ROOT ROUTE =====
 @app.get("/")
 def home():
-    return {"status": "API running"}
-# -----------------------
-# WORLD STATE
-# -----------------------
-world = {
-    "tick": 0,
-    "civilizations": [
-        {
-            "id": "Earth-Alpha",
-            "gdp": 1000,
-            "agents": 10,
-            "companies": 3,
-            "alive": True
-        },
-        {
-            "id": "Earth-Beta",
-            "gdp": 900,
-            "agents": 9,
-            "companies": 2,
-            "alive": True
-        }
-    ],
-    "trade_volume": 0
-}
+    return {"status": "AI Civilization API running"}
 
-# -----------------------
-# UPDATE CIV ECONOMY
-# -----------------------
-def update_civ(civ):
-    if not civ["alive"]:
-        return
-
-    production = civ["agents"] * random.randint(1, 5)
-    business = civ["companies"] * random.randint(5, 15)
-    event = random.randint(-15, 25)
-
-    civ["gdp"] += production + business + event
-
-    civ["agents"] += random.choice([0, 1])
-
-    civ["companies"] += random.choice([-1, 0, 1])
-    if civ["companies"] < 1:
-        civ["companies"] = 1
-
-    if civ["gdp"] < 300:
-        civ["alive"] = False
-
-# -----------------------
-# TRADE SYSTEM
-# -----------------------
-def trade_between(civ_a, civ_b):
-    if not civ_a["alive"] or not civ_b["alive"]:
-        return 0
-
-    # trade strength based on economy size
-    trade_value = int((civ_a["gdp"] + civ_b["gdp"]) * random.uniform(0.01, 0.03))
-
-    # transfer effect
-    if civ_a["gdp"] > civ_b["gdp"]:
-        civ_a["gdp"] += trade_value
-        civ_b["gdp"] += int(trade_value * 0.6)
-    else:
-        civ_b["gdp"] += trade_value
-        civ_a["gdp"] += int(trade_value * 0.6)
-
-    return trade_value
-
-# -----------------------
-# SIMULATION STEP
-# -----------------------
-def step_world():
-    world["tick"] += 1
-    world["trade_volume"] = 0
-
-    # update civilizations
-    for civ in world["civilizations"]:
-        update_civ(civ)
-
-    # trade phase (pairwise)
-    civs = world["civilizations"]
-
-    for i in range(len(civs)):
-        for j in range(i + 1, len(civs)):
-            trade_value = trade_between(civs[i], civs[j])
-            world["trade_volume"] += trade_value
-
-    return {
-        "tick": world["tick"],
-        "civilizations": world["civilizations"],
-        "global_trade": world["trade_volume"]
-    }
-
-# -----------------------
-# API
-# -----------------------
+# ===== SIMULATION ROUTE =====
 @app.get("/step")
 def step():
-    return step_world()
+    return run_simulation()
 
-@app.get("/state")
-def state():
-    return world
+# ===== AUTH ROUTES =====
+@app.post("/signup")
+def signup(data: dict):
+    api_key = create_user(data["email"], data["password"])
+    return {"api_key": api_key}
+
+@app.post("/login")
+def login(data: dict):
+    return login_user(data["email"], data["password"])
+
+# ===== USER PLAN =====
+@app.get("/me")
+def me(api_key: str = Header(None)):
+    plan = get_user_plan(api_key)
+    return {"plan": plan}
+
+# ===== PAYMENT ROUTE =====
+@app.post("/pay")
+def pay(data: dict):
+    return create_payment(data)
+
+# ===== ADMIN ROUTES =====
+@app.get("/admin/payments")
+def admin_payments():
+    return get_payments()
+
+@app.post("/admin/approve")
+def approve(payment_id: int):
+    return approve_payment(payment_id)
