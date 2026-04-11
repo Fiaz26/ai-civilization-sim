@@ -1,12 +1,10 @@
-@app.get("/")
-def home():
-    return {"message": "AI Civilization API is running"}
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-import random
+
+# ✅ FIRST create app
 app = FastAPI()
 
+# ✅ THEN use it
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -14,6 +12,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# ✅ THEN routes
+@app.get("/")
+def home():
+    return {"status": "API running"}
 # -----------------------
 # WORLD STATE
 # -----------------------
