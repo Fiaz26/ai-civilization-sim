@@ -1,9 +1,9 @@
-from database import cursor, conn
+# auth.py
 
-def create_user(email, password):
+def create_user(cursor, conn, email, password):
     try:
         cursor.execute(
-            "INSERT INTO users (email, password) VALUES (?, ?)",
+            "INSERT INTO users VALUES (?, ?, 10)",
             (email, password)
         )
         conn.commit()
@@ -12,7 +12,7 @@ def create_user(email, password):
         return False
 
 
-def verify_user(email, password):
+def verify_user(cursor, email, password):
     cursor.execute(
         "SELECT * FROM users WHERE email=? AND password=?",
         (email, password)
