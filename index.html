@@ -174,8 +174,6 @@ async function login(){
   } catch(err){
     alert("Login failed: " + err.message);
   }
-}
-
 async function runSim(){
   try{
     const res = await fetch(API + "/step");
@@ -185,7 +183,43 @@ async function runSim(){
   } catch(err){
     alert("Fetch error: " + err.message);
   }
-}
+
 </script>
+async function signup(){
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+
+  const res = await fetch(API + "/signup", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password })
+  });
+
+  const data = await res.json();
+  alert(JSON.stringify(data));
+}
+
+async function login(){
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+
+  const res = await fetch(API + "/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password })
+  });
+
+  const data = await res.json();
+  alert(JSON.stringify(data));
+}
+
+async function runSim(){
+  const res = await fetch(API + "/step");
+  const data = await res.json();
+
+  document.getElementById("output").innerText =
+    JSON.stringify(data, null, 2);
+}
+  
 </body>
 </html>
