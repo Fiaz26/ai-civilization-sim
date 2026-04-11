@@ -27,16 +27,24 @@ class User(BaseModel):
     password: str
 
 fake_users = {}
+
 @app.post("/signup")
 def signup(user: User):
-    if user.email in fake_users:
-        return {"error": "User exists"}
+    email = user.email.strip().lower()
 
-    fake_users[user.email] = user.password
-    return {"message": "signup success"}
-    @app.post("/login")
+    if email in fake_users:
+        return {"status": "error", "message": "User already exists"}
+
+    fake_users[email] = user.password
+    return {"status": "success", "api_key": email}
+
+
+@app.post("/login")
 def login(user: User):
-    if fake_users.get(user.email) == user.password:
-        return {"message": "login success", "api_key": user.email}
-    return {"error": "invalid credentials"}
+    email = user.email.strip().lower()
+
+    if fake_users.get(email) == user.password:
+        return {"status": "success", "api_key": email}
+
+    return {"status": "error", "message": "Invalid credentials"}
     
