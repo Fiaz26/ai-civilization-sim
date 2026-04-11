@@ -109,3 +109,87 @@ async function login() {
   const data = await res.json();
   console.log(data);
 }
+<script>
+const API = "https://ai-civilization-sim-production.up.railway.app";
+
+/* ===== SIGNUP ===== */
+async function signup() {
+  try {
+    const res = await fetch(`${API}/signup`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        email: document.getElementById("email").value,
+        password: document.getElementById("password").value
+      })
+    });
+
+    const data = await res.json();
+
+    if (data.status === "success") {
+      localStorage.setItem("api_key", data.api_key);
+    }
+
+    document.getElementById("output").innerText =
+      JSON.stringify(data, null, 2);
+
+  } catch (err) {
+    document.getElementById("output").innerText =
+      "Signup error: " + err.message;
+  }
+}
+
+/* ===== LOGIN ===== */
+async function login() {
+  try {
+    const res = await fetch(`${API}/login`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        email: document.getElementById("email").value,
+        password: document.getElementById("password").value
+      })
+    });
+
+    const data = await res.json();
+
+    if (data.status === "success") {
+      localStorage.setItem("api_key", data.api_key);
+    }
+
+    document.getElementById("output").innerText =
+      JSON.stringify(data, null, 2);
+
+  } catch (err) {
+    document.getElementById("output").innerText =
+      "Login error: " + err.message;
+  }
+}
+
+/* ===== SIMULATION ===== */
+async function runSim() {
+  try {
+    const apiKey = localStorage.getItem("api_key");
+
+    if (!apiKey) {
+      document.getElementById("output").innerText =
+        "Please login first!";
+      return;
+    }
+
+    const res = await fetch(`${API}/step?api_key=${apiKey}`);
+    const data = await res.json();
+
+    document.getElementById("output").innerText =
+      JSON.stringify(data, null, 2);
+
+  } catch (err) {
+    document.getElementById("output").innerText =
+      "Simulation error: " + err.message;
+  }
+}
+</script>
