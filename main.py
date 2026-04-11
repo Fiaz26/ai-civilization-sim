@@ -77,34 +77,19 @@ def step(api_key: str):
         "tick": tick_store[api_key],
         "credits_left": credits - 1
     }
-
-      async function signup() {
-  const res = await fetch(API + "/signup", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      email: document.getElementById("email").value,
-      password: document.getElementById("password").value
-    })
-  });
-
-  const data = await res.json();
-  console.log(data);
-}
-
-async function login() {
-  const res = await fetch(API + "/login", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      email: document.getElementById("email").value,
-      password: document.getElementById("password").value
-    })
-  });
+from auth import create_user, verify_user
+      
+@app.post("/signup")
+def signup(user: User):
+    if create_user(cursor, conn, user.email, user.password):
+        return {"status": "success", "api_key": user.email}
+    return {"status": "error", "message": "User exists"}
+    
+@app.post("/login")
+def login(user: User):
+    if verify_user(cursor, user.email, user.password):
+        return {"status": "success", "api_key": user.email}
+    return {"status": "error", "message": "Invalid"}
 
   const data = await res.json();
   console.log(data);
