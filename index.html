@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>AI Civilization Sim</title>
+  <title>AI Civilization SaaS</title>
 
   <style>
     body {
@@ -15,7 +15,7 @@
       padding: 40px;
     }
 
-    .container {
+    .box {
       width: 420px;
       background: #111827;
       padding: 20px;
@@ -36,9 +36,9 @@
       margin-top: 8px;
       border: none;
       border-radius: 6px;
-      cursor: pointer;
       background: #3b82f6;
       color: white;
+      cursor: pointer;
       font-weight: bold;
     }
 
@@ -51,7 +51,7 @@
       padding: 10px;
       margin-top: 15px;
       border-radius: 8px;
-      height: 180px;
+      height: 200px;
       overflow: auto;
     }
   </style>
@@ -59,33 +59,32 @@
 
 <body>
 
-<div class="container">
+<div class="box">
 
-  <h2>AI Civilization Sim</h2>
+  <h2>AI Civilization SaaS</h2>
 
-  <!-- AUTH -->
-  <input id="email" type="text" placeholder="Email">
-  <input id="password" type="password" placeholder="Password">
+  <input id="email" placeholder="Email" />
+  <input id="password" type="password" placeholder="Password" />
 
   <button onclick="signup()">Signup</button>
   <button onclick="login()">Login</button>
+  <button onclick="runSim()">Run Simulation</button>
 
-  <!-- SIMULATION -->
-  <button onclick="runSim()">Start Simulation</button>
-
-  <pre id="output">Output will appear here...</pre>
+  <pre id="output">Output...</pre>
 
 </div>
 
 <script>
 const API = "https://ai-civilization-sim-production.up.railway.app";
 
-// SIGNUP
+/* ================= SIGNUP ================= */
 async function signup() {
   try {
-    const res = await fetch(API + "/signup", {
+    const res = await fetch(`${API}/signup`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json"
+      },
       body: JSON.stringify({
         email: document.getElementById("email").value,
         password: document.getElementById("password").value
@@ -93,18 +92,21 @@ async function signup() {
     });
 
     const data = await res.json();
-    alert(JSON.stringify(data));
+    document.getElementById("output").innerText = JSON.stringify(data, null, 2);
+
   } catch (err) {
-    alert("Signup error: " + err.message);
+    document.getElementById("output").innerText = "Signup error: " + err.message;
   }
 }
 
-// LOGIN
+/* ================= LOGIN ================= */
 async function login() {
   try {
-    const res = await fetch(API + "/login", {
+    const res = await fetch(`${API}/login`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json"
+      },
       body: JSON.stringify({
         email: document.getElementById("email").value,
         password: document.getElementById("password").value
@@ -112,16 +114,17 @@ async function login() {
     });
 
     const data = await res.json();
-    alert(JSON.stringify(data));
+    document.getElementById("output").innerText = JSON.stringify(data, null, 2);
+
   } catch (err) {
-    alert("Login error: " + err.message);
+    document.getElementById("output").innerText = "Login error: " + err.message;
   }
 }
 
-// SIMULATION
+/* ================= SIMULATION ================= */
 async function runSim() {
   try {
-    const res = await fetch(API + "/step");
+    const res = await fetch(`${API}/step`);
     const data = await res.json();
 
     document.getElementById("output").innerText =
@@ -129,7 +132,7 @@ async function runSim() {
 
   } catch (err) {
     document.getElementById("output").innerText =
-      "Error: " + err.message;
+      "Simulation error: " + err.message;
   }
 }
 </script>
