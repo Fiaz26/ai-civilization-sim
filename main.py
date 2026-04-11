@@ -53,6 +53,7 @@ def login(user: User):
     if data:
         return {"status": "success", "api_key": user.email}
     return {"status": "error", "message": "Invalid credentials"}
+    localStorage.setItem("api_key", data.api_key);
 
 # SIMULATION (USER BASED)
 tick_store = {}
@@ -99,3 +100,6 @@ def admin():
         "total_users": total_users,
         "total_credits": total_credits
     }
+fetch(`${API}/step?api_key=` + localStorage.getItem("api_key"))
+
+      
