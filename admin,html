@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Admin Dashboard</title>
+</head>
+<body>
+
+<h2>Pending Payments</h2>
+
+<button onclick="load()">Load Payments</button>
+
+<div id="list"></div>
+
+<script>
+const API = "https://YOUR-API.com";
+
+async function load() {
+  const res = await fetch(API + "/admin/payments", {
+    headers: {
+      "admin-key": "secret-admin-key"
+    }
+  });
+
+  const data = await res.json();
+
+  let html = "";
+
+  data.forEach(p => {
+    html += `
+      <div>
+        <p>ID: ${p[0]}</p>
+        <p>API KEY: ${p[1]}</p>
+        <p>Amount: ${p[3]}</p>
+        <button onclick="approve(${p[0]})">Approve</button>
+      </div>
+      <hr>
+    `;
+  });
+
+  document.getElementById("list").innerHTML = html;
+}
+
+async function approve(id) {
+  await fetch(API + "/admin/approve?payment_id=" + id, {
+    method: "POST",
+    headers: {
+      "admin-key": "secret-admin-key"
+    }
+  });
+
+  alert("Approved!");
+  load();
+}
+</script>
+
+</body>
+</html>
