@@ -32,20 +32,22 @@ except Exception as e:
 
 # ===== AUTH =====
 try:
-    from auth import create_user, login_user
+    from pydantic import BaseModel
 
-    @app.post("/signup")
-    def signup(data: dict):
-        return {"api_key": create_user(data["email"], data["password"])}
+# ===== REQUEST MODELS =====
+class User(BaseModel):
+    email: str
+    password: str
 
-    @app.post("/login")
-    def login(data: dict):
-        return login_user(data["email"], data["password"])
+# ===== AUTH ROUTES =====
+@app.post("/signup")
+def signup(user: User):
+    api_key = create_user(user.email, user.password)
+    return {"api_key": api_key}
 
-except Exception as e:
-    @app.post("/signup")
-    def signup_error():
-        return {"error": "auth failed", "detail": str(e)}
+@app.post("/login")
+def login(user: User):
+    return login_user(user.email, user.password)
 
 # ===== USER PLAN =====
 try:
