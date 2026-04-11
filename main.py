@@ -1,3 +1,7 @@
+@app.get("/")
+def home():
+    return {"message": "AI Civilization API is running"}
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import random
