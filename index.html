@@ -45,43 +45,66 @@ if(API_KEY){
   document.getElementById("authBox").style.display="none";
   document.getElementById("dashboard").style.display="block";
 }
-
 async function signup(){
   let email = document.getElementById("email").value;
   let password = document.getElementById("password").value;
 
-  let res = await fetch(API+"/signup", {
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({email,password})
-  });
+  console.log("Sending signup...");
 
-  let data = await res.json();
-  API_KEY = data.api_key;
-  localStorage.setItem("api_key", API_KEY);
+  try{
+    let res = await fetch(API+"/signup", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({email,password})
+    });
 
-  alert("Signup success");
-  location.reload();
-}
+    console.log("Response:", res);
 
-async function login(){
+    let data = await res.json();
+    console.log("Data:", data);
+
+    if(data.api_key){
+      API_KEY = data.api_key;
+      localStorage.setItem("api_key", API_KEY);
+      alert("Signup success");
+      location.reload();
+    }else{
+      alert("Signup failed: " + JSON.stringify(data));
+    }
+
+  }catch(e){
+    alert("ERROR: " + e.message);
+  }
+      }
+  
+asyasync function login(){
   let email = document.getElementById("email").value;
   let password = document.getElementById("password").value;
 
-  let res = await fetch(API+"/login", {
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({email,password})
-  });
+  try{
+    let res = await fetch(API+"/login", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({email,password})
+    });
 
-  let data = await res.json();
-  API_KEY = data.api_key;
-  localStorage.setItem("api_key", API_KEY);
+    let data = await res.json();
 
-  alert("Login success");
-  location.reload();
-}
+    if(data.api_key){
+      API_KEY = data.api_key;
+      localStorage.setItem("api_key", API_KEY);
+      alert("Login success");
+      location.reload();
+    }else{
+      alert("Login failed: " + JSON.stringify(data));
+    }
 
+  }catch(e){
+    alert("ERROR: " + e.message);
+  }
+  }
+
+asy
 async function runSim(){
   try{
     let res = await fetch(API+"/step");
