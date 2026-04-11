@@ -1,24 +1,44 @@
-from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
-app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+    from pydantic import BaseModel
 
-tick = 0
+class User(BaseModel):
+    email: str
+    password: str
 
-@app.get("/")
-def home():
-    return {"status": "working"}
+fake_users = {}
 
-@app.get("/step")
-def step():
-    global tick
-    tick += 1
+@app.post("/signup")
+def signup(user: User):
+    email = user.email.lower()
 
-    return {
-        "tick": tick,
-        "gdp": 1000 + tick * 10,
-        "agents": 10 + tick,
-        "companies": 2 + tick // 2,
-        "alive": True
-    }
+    if email in fake_users:
+        return {"status": "error", "message": "User exists"}
+
+    fake_users[email] = user.password
+    return {"status": "success", "api_key": email}
     
-    
+fetch(API + "/signup", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({
+    email,
+    password
+  })
+})fetch("https://ai-civilization-sim-production.up.railway.app/signup", {
+  method: "POST",
+  headers: {"Content-Type":"application/json"},
+  body: JSON.stringify({email:"test@test.com", password:"1234"})
+})
+.then(r=>r.json())
+.then(console.log)
+.catch(console.error)
