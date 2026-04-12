@@ -15,8 +15,7 @@ app.add_middleware(
 )
 
 # DB CONNECTION (ONLY ONE)
-conn = sqlite3.connect("db.sqlite", check_same_thread=False)
-cursor = conn.cursor()
+from database import conn, cursor, init_db
 
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS users (
@@ -54,7 +53,9 @@ def login(user: User):
     )
     if cursor.fetchone():
         return {"status": "success", "api_key": user.email}
-    return {"status": "error", "message": "Invalid"}
+    return {"status": "error", "message":
+    
+    "Invalid"}
 
 tick_store = {}
 
@@ -83,4 +84,42 @@ def step(api_key: str):
         "tick": tick_store[api_key],
         "credits_left": credits - 1
     }
+    
+@app.post("/login")
+def login(user: User):
+    cursor.execute(
+        "SELECT * FROM users WHERE email=? AND password=?",
+        (user.email, user.password)
+    )
 
+    if cursor.fetchone():
+        return {"status": "success", "api_key": user.email}
+
+    return {"status": "error", "message": "Invalid"}
+
+    @app.get("/step")
+def step(api_key: str):
+    cursor.execute("SELECT credits FROM users WHERE email=?", (api_key,))
+    user = cursor.fetchone()
+
+    if not user:
+        return {"error": "Invalid key"}
+
+    credits = user[0]
+
+    if credits <= 0:
+        return {"error": "No credits"}
+
+    global tick_store
+    tick_store[api_key] = tick_store.get(api_key, 0) + 1
+
+    cursor.execute(
+        "UPDATE users SET credits = credits - 1 WHERE email=?",
+        (api_key,)
+    )
+    conn.commit()
+
+    return {
+        "tick": tick_store[api_key],
+        "credits_left": credits - 1
+    }
