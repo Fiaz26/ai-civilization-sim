@@ -1,7 +1,5 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-import sqlite3
 
 app = FastAPI()
 
@@ -13,89 +11,41 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-conn = sqlite3.connect("db.sqlite", check_same_thread=False)
-cursor = conn.cursor()
-
-cursor.execute("""
-CREATE TABLE IF NOT EXISTS users (
-    email TEXT PRIMARY KEY,
-    password TEXT,
-    credits INTEGER DEFAULT 10,
-    plan TEXT DEFAULT 'free'
-)
-""")
-conn.commit()
-
-class User(BaseModel):
-    email: str
-    password: str
+users = {}  # in-memory (temporary but stable)
+ticks = {}
 
 @app.get("/")
 def home():
     return {"status": "running"}
 
 @app.post("/signup")
-def signup(user: User):
-    try:
-        cursor.execute(
-            "INSERT INTO users (email, password, credits) VALUES (?, ?, 10)",
-            (user.email, user.password)
-        )
-        conn.commit()
-        return {"status": "success", "api_key": user.email}
-    except:
-        return {"status": "error"}
+def signup(data: dict):
+    email = data.get("email")
+    password = data.get("password")
+
+    if email in users:
+        return {"status": "error", "msg": "exists"}
+
+    users[email] = password
+    return {"status": "success", "api_key": email}
+
 
 @app.post("/login")
-def login(user: User):
-    cursor.execute(
-        "SELECT * FROM users WHERE email=? AND password=?",
-        (user.email, user.password)
-    )
-    if cursor.fetchone():
-        return {"status": "success", "api_key": user.email}
-    return {"status": "error"}
+def login(data: dict):
+    email = data.get("email")
+    password = data.get("password")
 
-tick_store = {}
+    if users.get(email) == password:
+        return {"status": "success", "api_key": email}
+
+    return {"status": "error", "msg": "invalid"}
+
 
 @app.get("/step")
 def step(api_key: str):
-    cursor.execute("SELECT credits, plan FROM users WHERE email=?", (api_key,))
-    user = cursor.fetchone()
-
-    if not user:
-        return {"error": "Invalid key"}
-
-    credits, plan = user
-
-    if plan == "free" and credits <= 0:
-        return {
-            "error": "Upgrade required",
-            "upgrade": True   # ✅ FIXED
-        }
-
-    tick_store[api_key] = tick_store.get(api_key, 0) + 1
-
-    cursor.execute(
-        "UPDATE users SET credits = credits - 1 WHERE email=?",
-        (api_key,)
-    )
-    conn.commit()
-
+    ticks[api_key] = ticks.get(api_key, 0) + 1
     return {
-        "tick": tick_store[api_key],
-        "credits_left": credits - 1,
-        "plan": plan
+        "tick": ticks[api_key],
+        "user": api_key
     }
-
-
-@app.post("/upgrade")
-def upgrade(api_key: str):
-    cursor.execute(
-        "UPDATE users SET plan='pro', credits=100 WHERE email=?",
-        (api_key,)
-    )
-    conn.commit()
-
-    return {"status": "upgraded"}
     
