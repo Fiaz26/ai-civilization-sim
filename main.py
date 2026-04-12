@@ -23,9 +23,8 @@ CREATE TABLE IF NOT EXISTS users (
     email TEXT PRIMARY KEY,
     password TEXT,
     credits INTEGER DEFAULT 10
-)
-""")
 conn.commit()
+
 
 class User(BaseModel):
     email: str
