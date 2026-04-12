@@ -79,18 +79,17 @@ def step(api_key: str):
         "credits_left": credits - 1
     }
 from auth import create_user, verify_user
-      
-@app.post("/signup")
+    @app.post("/signup")
 def signup(user: User):
     if create_user(cursor, conn, user.email, user.password):
         return {"status": "success", "api_key": user.email}
     return {"status": "error", "message": "User exists"}
-    
-@app.post("/login")
+    @app.post("/login")
 def login(user: User):
     if verify_user(cursor, user.email, user.password):
         return {"status": "success", "api_key": user.email}
     return {"status": "error", "message": "Invalid"}
+    
 
   const data = await res.json();
   console.log(data);
