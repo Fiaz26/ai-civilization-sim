@@ -80,7 +80,7 @@ def step(api_key: str):
     }
 
 
-# 💰 USER SUBMITS PAYMENT
+# 💰 SUBMIT PAYMENT REQUEST
 @app.post("/request-payment")
 def request_payment(payment: Payment):
     payments.append({
@@ -94,24 +94,23 @@ def request_payment(payment: Payment):
     return {"status": "submitted"}
 
 
-# 🧑‍💼 ADMIN APPROVES PAYMENT (MANUAL)
+# 🧑‍💼 ADMIN APPROVAL
 @app.post("/approve")
 def approve(index: int):
     if index >= len(payments):
-        return {"error": "invalid index"}
+        return {"error": "invalid"}
 
     payment = payments[index]
     user = payment["user"]
 
     users[user]["credits"] += 100
     users[user]["plan"] = "pro"
-
     payment["status"] = "approved"
 
     return {"status": "approved"}
 
 
-# 📋 VIEW PAYMENTS (ADMIN)
+# 📋 VIEW PAYMENTS
 @app.get("/payments")
 def get_payments():
     return payments
