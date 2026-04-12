@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ok<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -92,7 +92,15 @@ async function signup() {
     });
 
     const data = await res.json();
-    document.getElementById("output").innerText = JSON.stringify(data, null, 2);
+    if (data.status === "success") {
+  localStorage.setItem("api_key", data.api_key);
+
+  document.getElementById("auth").style.display = "none";
+  document.getElementById("dashboard").style.display = "block";
+}
+
+document.getElementById("output").innerText =
+  JSON.stringify(data, null, 2);
 
   } catch (err) {
     document.getElementById("output").innerText = "Signup error: " + err.message;
@@ -102,7 +110,15 @@ async function signup() {
 /* ================= LOGIN ================= */
 async function login() {
   try {
-    const res = await fetch(`${API}/login`, {
+    if (data.status === "success") {
+  localStorage.setItem("api_key", data.api_key);
+
+  document.getElementById("auth").style.display = "none";
+  document.getElementById("dashboard").style.display = "block";
+}
+
+document.getElementById("output").innerText =
+  JSON.stringify(data, null, 2);
       method: "POST",
       headers: {
         "Content-Type": "application/json"
@@ -114,12 +130,31 @@ async function login() {
     });
 
     const data = await res.json();
-    document.getElementById("output").innerText = JSON.stringify(data, null, 2);
-
+    document.getElementById("output").innerText = JSON.stringify(data, null, 2
   } catch (err) {
     document.getElementById("output").innerText = "Login error: " + err.message;
+ <div id="dashboard" style="display:none;">
+  <h2>Dashboard</h2>
+  <button onclick="runSim()">Run Simulation</button>
+  <button onclick="logout()">Logout</button>
+   function logout() {
+  localStorage.removeItem("api_key");
+
+  document.getElementById("dashboard").style.display = "none";
+  document.getElementById("auth").style.display = "block";
+   window.onload = function() {
+  const apiKey = localStorage.getItem("api_key");
+
+  if (apiKey) {
+    document.getElementById("auth").style.display = "none";
+    document.getElementById("dashboard").style.display = "block";
   }
-}
+};
+</div>
+  
+  
+  
+
 
 /* ================= SIMULATION ================= */
 async function runSim() {
