@@ -1,9 +1,10 @@
-
-    from fastapi import FastAPI
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 
 app = FastAPI()
 
+# CORS (required)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -12,7 +13,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# In-memory storage (stable for now)
+# Data Model (THIS FIXES CRASH)
+class User(BaseModel):
+    email: str
+    password: str
+
+# In-memory storage
 users = {}
 ticks = {}
 
@@ -22,9 +28,9 @@ def home():
 
 
 @app.post("/signup")
-def signup(data: dict):
-    email = data.get("email")
-    password = data.get("password")
+def signup(user: User):
+    email = user.email
+    password = user.password
 
     if email in users:
         return {"status": "error", "msg": "User exists"}
@@ -42,9 +48,9 @@ def signup(data: dict):
 
 
 @app.post("/login")
-def login(data: dict):
-    email = data.get("email")
-    password = data.get("password")
+def login(user: User):
+    email = user.email
+    password = user.password
 
     if email in users and users[email]["password"] == password:
         return {
@@ -74,3 +80,9 @@ def step(api_key: str):
         "tick": ticks[api_key],
         "credits_left": users[api_key]["credits"]
     }
+
+
+# IMPORTANT FOR RAILWAY
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8080)
