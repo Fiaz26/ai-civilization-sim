@@ -123,3 +123,9 @@ def step(api_key: str):
         "tick": tick_store[api_key],
         "credits_left": credits - 1
     }
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8080)
+    # deploy fix
+infra fix deploy
+    
