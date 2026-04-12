@@ -4,6 +4,7 @@ from pydantic import BaseModel
 import sqlite3
 
 app = FastAPI()
+from auth import create_user, verify_user
 
 # CORS
 app.add_middleware(
@@ -178,3 +179,4 @@ async function runSim() {
   }
 }
 </script>
+
