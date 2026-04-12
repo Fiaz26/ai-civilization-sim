@@ -4,7 +4,6 @@ from pydantic import BaseModel
 
 app = FastAPI()
 
-# CORS (required)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -13,14 +12,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Data Model (THIS FIXES CRASH)
 class User(BaseModel):
     email: str
     password: str
 
-# In-memory storage
+class Payment(BaseModel):
+    api_key: str
+    method: str
+    amount: float
+    note: str
+
 users = {}
 ticks = {}
+payments = []
 
 @app.get("/")
 def home():
@@ -29,60 +33,85 @@ def home():
 
 @app.post("/signup")
 def signup(user: User):
-    email = user.email
-    password = user.password
+    if user.email in users:
+        return {"status": "error"}
 
-    if email in users:
-        return {"status": "error", "msg": "User exists"}
-
-    users[email] = {
-        "password": password,
-        "credits": 10
+    users[user.email] = {
+        "password": user.password,
+        "credits": 10,
+        "plan": "free"
     }
 
     return {
         "status": "success",
-        "api_key": email,
+        "api_key": user.email,
         "credits": 10
     }
 
 
 @app.post("/login")
 def login(user: User):
-    email = user.email
-    password = user.password
-
-    if email in users and users[email]["password"] == password:
+    if user.email in users and users[user.email]["password"] == user.password:
         return {
             "status": "success",
-            "api_key": email,
-            "credits": users[email]["credits"]
+            "api_key": user.email,
+            "credits": users[user.email]["credits"],
+            "plan": users[user.email]["plan"]
         }
 
-    return {"status": "error", "msg": "Invalid login"}
+    return {"status": "error"}
 
 
 @app.get("/step")
 def step(api_key: str):
     if api_key not in users:
-        return {"error": "Invalid user"}
+        return {"error": "invalid"}
 
     if users[api_key]["credits"] <= 0:
-        return {
-            "error": "No credits",
-            "message": "Upgrade required"
-        }
+        return {"error": "no credits"}
 
     users[api_key]["credits"] -= 1
     ticks[api_key] = ticks.get(api_key, 0) + 1
 
     return {
         "tick": ticks[api_key],
-        "credits_left": users[api_key]["credits"]
+        "credits_left": users[api_key]["credits"],
+        "plan": users[api_key]["plan"]
     }
 
 
-# IMPORTANT FOR RAILWAY
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8080)
+# 💰 USER SUBMITS PAYMENT
+@app.post("/request-payment")
+def request_payment(payment: Payment):
+    payments.append({
+        "user": payment.api_key,
+        "method": payment.method,
+        "amount": payment.amount,
+        "note": payment.note,
+        "status": "pending"
+    })
+
+    return {"status": "submitted"}
+
+
+# 🧑‍💼 ADMIN APPROVES PAYMENT (MANUAL)
+@app.post("/approve")
+def approve(index: int):
+    if index >= len(payments):
+        return {"error": "invalid index"}
+
+    payment = payments[index]
+    user = payment["user"]
+
+    users[user]["credits"] += 100
+    users[user]["plan"] = "pro"
+
+    payment["status"] = "approved"
+
+    return {"status": "approved"}
+
+
+# 📋 VIEW PAYMENTS (ADMIN)
+@app.get("/payments")
+def get_payments():
+    return payments
