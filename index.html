@@ -134,7 +134,10 @@ pre {
 
       <button onclick="submitPayment()">Submit Payment</button>
     </div>
-
+if (!amountValue || isNaN(amountValue)) {
+  alert("Please enter a valid amount");
+  return;
+}
     <!-- OUTPUT -->
     <div class="card">
       <h3>Output</h3>
