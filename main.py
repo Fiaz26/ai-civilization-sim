@@ -52,11 +52,21 @@ def request_payment(payment: Payment):
 @app.get("/payments")
 def get_payments():
     return payments
-
-@app.get("/step")
+    @app.get("/step")
 def step(api_key: str):
     if api_key not in users:
         return {"error": "invalid"}
 
+    # prevent negative credits
+    if users[api_key]["credits"] <= 0:
+        return {"error": "no credits"}
+
     users[api_key]["credits"] -= 1
-    return {"tick": ticks.get(api_key, 0) + 1}
+
+    # FIX: persist tick value
+    ticks[api_key] = ticks.get(api_key, 0) + 1
+
+    return {
+        "tick": ticks[api_key],
+        "credits": users[api_key]["credits"]
+        }
