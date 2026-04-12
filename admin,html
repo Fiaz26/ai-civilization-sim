@@ -1,56 +1,110 @@
+
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Admin Dashboard</title>
+<meta charset="UTF-8">
+<title>Admin Panel</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body {
+  margin:0;
+  font-family:Arial;
+  background:#0f172a;
+  color:white;
+}
+
+.header {
+  background:#020617;
+  padding:15px;
+  text-align:center;
+}
+
+.container {
+  padding:20px;
+}
+
+.card {
+  background:#1e293b;
+  padding:15px;
+  margin-bottom:15px;
+  border-radius:8px;
+}
+
+button {
+  padding:8px 12px;
+  border:none;
+  border-radius:6px;
+  background:#22c55e;
+  color:white;
+  cursor:pointer;
+}
+
+button.reject {
+  background:#ef4444;
+}
+
+pre {
+  background:black;
+  padding:10px;
+  border-radius:6px;
+}
+</style>
 </head>
+
 <body>
 
-<h2>Pending Payments</h2>
+<div class="header">
+  <h2>Admin Dashboard</h2>
+  <button onclick="loadPayments()">Refresh</button>
+</div>
 
-<button onclick="load()">Load Payments</button>
-
-<div id="list"></div>
+<div class="container" id="payments"></div>
 
 <script>
-const API = "https://YOUR-API.com";
+const API = "https://ai-civilization-sim-production.up.railway.app";
 
-async function load() {
-  const res = await fetch(API + "/admin/payments", {
-    headers: {
-      "admin-key": "secret-admin-key"
-    }
+/* LOAD PAYMENTS */
+async function loadPayments() {
+  const res = await fetch(API + "/payments");
+  const data = await res.json();
+
+  const container = document.getElementById("payments");
+  container.innerHTML = "";
+
+  data.forEach((p, index) => {
+
+    const div = document.createElement("div");
+    div.className = "card";
+
+    div.innerHTML = `
+      <b>User:</b> ${p.user}<br>
+      <b>Method:</b> ${p.method}<br>
+      <b>Amount:</b> ${p.amount}<br>
+      <b>Note:</b> ${p.note}<br>
+      <b>Status:</b> ${p.status}<br><br>
+
+      <button onclick="approve(${index})">Approve</button>
+    `;
+
+    container.appendChild(div);
+  });
+}
+
+/* APPROVE PAYMENT */
+async function approve(index) {
+  const res = await fetch(API + "/approve?index=" + index, {
+    method: "POST"
   });
 
   const data = await res.json();
 
-  let html = "";
-
-  data.forEach(p => {
-    html += `
-      <div>
-        <p>ID: ${p[0]}</p>
-        <p>API KEY: ${p[1]}</p>
-        <p>Amount: ${p[3]}</p>
-        <button onclick="approve(${p[0]})">Approve</button>
-      </div>
-      <hr>
-    `;
-  });
-
-  document.getElementById("list").innerHTML = html;
-}
-
-async function approve(id) {
-  await fetch(API + "/admin/approve?payment_id=" + id, {
-    method: "POST",
-    headers: {
-      "admin-key": "secret-admin-key"
-    }
-  });
-
   alert("Approved!");
-  load();
+  loadPayments();
 }
+
+/* AUTO LOAD */
+window.onload = loadPayments;
 </script>
 
 </body>
