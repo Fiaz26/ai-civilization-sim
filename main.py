@@ -68,14 +68,12 @@ def step(api_key: str):
 
     credits, plan = user
 
-    # FREE LIMIT
     if plan == "free" and credits <= 0:
         return {
             "error": "Upgrade required",
-            "upgrade": true
+            "upgrade": True   # ✅ FIXED
         }
 
-    global tick_store
     tick_store[api_key] = tick_store.get(api_key, 0) + 1
 
     cursor.execute(
@@ -88,7 +86,10 @@ def step(api_key: str):
         "tick": tick_store[api_key],
         "credits_left": credits - 1,
         "plan": plan
-    @app.post("/upgrade")
+    }
+
+
+@app.post("/upgrade")
 def upgrade(api_key: str):
     cursor.execute(
         "UPDATE users SET plan='pro', credits=100 WHERE email=?",
