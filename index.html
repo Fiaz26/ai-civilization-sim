@@ -227,18 +227,26 @@ async function runSim() {
 }
 
 /* PAYMENT */
+async 
 async function submitPayment() {
+  const amountValue = document.getElementById("amount").value;
+
   const res = await fetch(API + "/request-payment", {
     method: "POST",
     headers: {"Content-Type":"application/json"},
     body: JSON.stringify({
       api_key: apiKey,
       method: document.getElementById("method").value,
-      amount: parseFloat(document.getElementById("amount").value),
+      amount: Number(amountValue),   // ✅ FIX HERE
       note: document.getElementById("note").value
     })
   });
 
+  const data = await res.json();
+
+  document.getElementById("output").innerText =
+    JSON.stringify(data, null, 2);
+}
   const data = await res.json();
 
   document.getElementById("output").innerText =
