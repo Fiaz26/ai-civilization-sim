@@ -1,203 +1,147 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<title>AI SaaS</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<style>
-body { margin:0; font-family:Arial; background:#0f172a; color:white; }
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 
-#auth {
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  height:100vh;
-}
+app = FastAPI()
 
-input {
-  padding:12px;
-  margin:8px;
-  width:250px;
-  border-radius:6px;
-  border:none;
-}
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-button {
-  padding:10px;
-  margin:6px;
-  border:none;
-  border-radius:6px;
-  background:#3b82f6;
-  color:white;
-  cursor:pointer;
-}
+class User(BaseModel):
+    email: str
+    password: str
 
-#dashboard { display:none; }
+class Payment(BaseModel):
+    api_key: str
+    method: str
+    amount: float
+    note: str
 
-.header {
-  background:#020617;
-  padding:15px;
-  display:flex;
-  justify-content:space-between;
-}
+users = {}
+ticks = {}
+payments = []
 
-.container { padding:20px; }
+@app.get("/")
+def home():
+    return {"status": "running"}
 
-.card {
-  background:#1e293b;
-  padding:15px;
-  border-radius:8px;
-  margin-bottom:10px;
-}
 
-pre {
-  background:black;
-  padding:10px;
-  border-radius:6px;
-}
-</style>
-</head>
+@app.post("/signup")
+def signup(user: User):
+    if user.email in users:
+        return {"status": "error"}
 
-<body>
+    users[user.email] = {
+        "password": user.password,
+        "credits": 10,
+        "plan": "free"
+    }
 
-<!-- AUTH -->
-<div id="auth">
-  <h1>AI SaaS</h1>
+    return {
+        "status": "success",
+        "api_key": user.email,
+        "credits": 10
+    }
 
-  <input id="email" placeholder="Email">
-  <input id="password" type="password" placeholder="Password">
 
-  <button onclick="signup()">Signup</button>
-  <button onclick="login()">Login</button>
+@app.post("/login")
+def login(user: User):
+    if user.email in users and users[user.email]["password"] == user.password:
+        return {
+            "status": "success",
+            "api_key": user.email,
+            "credits": users[user.email]["credits"],
+            "plan": users[user.email]["plan"]
+        }
 
-  <pre id="authOut"></pre>
-</div>
+    return {"status": "error"}
 
-<!-- DASHBOARD -->
-<div id="dashboard">
 
-  <div class="header">
-    <h2>Dashboard</h2>
-    <button onclick="logout()">Logout</button>
-  </div>
+@app.get("/step")
+def step(api_key: str):
+    if api_key not in users:
+        return {"error": "invalid"}
 
-  <div class="container">
+    if users[api_key]["credits"] <= 0:
+        return {"error": "no credits"}
 
-    <div class="card">Tick: <span id="tick">0</span></div>
-    <div class="card">Credits: <span id="credits">0</span></div>
+    users[api_key]["credits"] -= 1
+    ticks[api_key] = ticks.get(api_key, 0) + 1
 
-    <button onclick="runSim()">Run Simulation</button>
+    return {
+        "tick": ticks[api_key],
+        "credits_left": users[api_key]["credits"],
+        "plan": users[api_key]["plan"]
+    }
 
-    <pre id="output"></pre>
 
-  </div>
-</div>
+# 💰 USER SUBMITS PAYMENT
+@app.post("/request-payment")
+def request_payment(payment: Payment):
+    payments.append({
+        "user": payment.api_key,
+        "method": payment.method,
+        "amount": payment.amount,
+        "note": payment.note,
+        "status": "pending"
+    })
 
-<script>
-const API = "https://ai-civilization-sim-production.up.railway.app";
+    return {"status": "submitted"}
 
-let apiKey = "";
 
-/* UI CONTROL */
-function showDashboard() {
-  document.getElementById("auth").style.display = "none";
-  document.getElementById("dashboard").style.display = "block";
-}
+# 🧑‍💼 ADMIN APPROVES PAYMENT (MANUAL)
+@app.post("/approve")
+def approve(index: int):
+    if index >= len(payments):
+        return {"error": "invalid index"}
 
-function showAuth() {
-  document.getElementById("auth").style.display = "flex";
-  document.getElementById("dashboard").style.display = "none";
-}
+    payment = payments[index]
+    user = payment["user"]
 
-/* SIGNUP */
-async function signup() {
-  const res = await fetch(API + "/signup", {
+    users[user]["credits"] += 100
+    users[user]["plan"] = "pro"
+
+    payment["status"] = "approved"
+
+    return {"status": "approved"}
+
+
+# 📋 VIEW PAYMENTS (ADMIN)
+@app.get("/payments")
+def get_payments():
+    return payments
+      <h3>Upgrade</h3>
+
+<select id="method">
+  <option>Easypaisa</option>
+  <option>JazzCash</option>
+  <option>Payoneer</option>
+</select>
+
+<input id="amount" placeholder="Amount">
+<input id="note" placeholder="Transaction ID / Note">
+
+      async function submitPayment() {
+  const res = await fetch(API + "/request-payment", {
     method: "POST",
     headers: {"Content-Type":"application/json"},
     body: JSON.stringify({
-      email: email.value,
-      password: password.value
+      api_key: apiKey,
+      method: document.getElementById("method").value,
+      amount: parseFloat(document.getElementById("amount").value),
+      note: document.getElementById("note").value
     })
   });
 
   const data = await res.json();
-
-  if (data.status === "success") {
-    apiKey = data.api_key;
-    localStorage.setItem("api_key", apiKey);
-
-    document.getElementById("credits").innerText = data.credits;
-
-    showDashboard();
-  }
-
-  document.getElementById("authOut").innerText =
-    JSON.stringify(data, null, 2);
-}
-
-/* LOGIN */
-async function login() {
-  const res = await fetch(API + "/login", {
-    method: "POST",
-    headers: {"Content-Type":"application/json"},
-    body: JSON.stringify({
-      email: email.value,
-      password: password.value
-    })
-  });
-
-  const data = await res.json();
-
-  if (data.status === "success") {
-    apiKey = data.api_key;
-    localStorage.setItem("api_key", apiKey);
-
-    document.getElementById("credits").innerText = data.credits;
-
-    showDashboard();
-  }
-
-  document.getElementById("authOut").innerText =
-    JSON.stringify(data, null, 2);
-}
-
-/* SIMULATION */
-async function runSim() {
-  const res = await fetch(API + "/step?api_key=" + apiKey);
-  const data = await res.json();
-
-  if (data.error) {
-    document.getElementById("output").innerText =
-      "❌ " + data.message;
-    return;
-  }
-
-  document.getElementById("tick").innerText = data.tick;
-  document.getElementById("credits").innerText = data.credits_left;
 
   document.getElementById("output").innerText =
     JSON.stringify(data, null, 2);
 }
-
-/* LOGOUT */
-function logout() {
-  localStorage.removeItem("api_key");
-  apiKey = "";
-  showAuth();
-}
-
-/* AUTO LOGIN */
-window.onload = function() {
-  const saved = localStorage.getItem("api_key");
-
-  if (saved) {
-    apiKey = saved;
-    showDashboard();
-  }
-};
-</script>
-
-</body>
-</html>
+<button onclick="submitPayment()">Submit Payment</button>
