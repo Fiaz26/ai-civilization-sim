@@ -81,18 +81,31 @@ def step(api_key: str):
 
 
 # 💰 SUBMIT PAYMENT REQUEST
+import json
+import os
+
+PAYMENT_FILE = "payments.json"
+
+def load_payments():
+    if os.path.exists(PAYMENT_FILE):
+        with open(PAYMENT_FILE, "r") as f:
+            return json.load(f)
+    return []
+
+def save_payments(data):
+    with open(PAYMENT_FILE, "w") as f:
+        json.dump(data, f)
+
+payments = load_payments()
 @app.post("/request-payment")
 def request_payment(payment: Payment):
-    payments.append({
-        "user": payment.api_key,
-        "method": payment.method,
-        "amount": payment.amount,
-        "note": payment.note,
-        "status": "pending"
-    })
+    payments.append(payment.dict())
+    save_payments(payments)
 
     return {"status": "submitted"}
-
+    @app.get("/payments")
+def get_payments():
+    return payments
 
 # 🧑‍💼 ADMIN APPROVAL
 @app.post("/approve")
