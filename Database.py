@@ -1,14 +1,12 @@
+# database.py
+
 import sqlite3
 
-def get_db():
-    conn = sqlite3.connect("db.sqlite", check_same_thread=False)
-    cursor = conn.cursor()
-    return conn, cursor
-
+# SINGLE GLOBAL CONNECTION (IMPORTANT)
+conn = sqlite3.connect("db.sqlite", check_same_thread=False)
+cursor = conn.cursor()
 
 def init_db():
-    conn, cursor = get_db()
-
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS users (
         email TEXT PRIMARY KEY,
@@ -17,4 +15,3 @@ def init_db():
     )
     """)
     conn.commit()
-    conn.close()
