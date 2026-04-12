@@ -1,23 +1,151 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>AI Civilization SaaS</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body {
+  margin:0;
+  font-family:Arial;
+  background:#0f172a;
+  color:white;
+}
+
+/* AUTH */
+#auth {
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  height:100vh;
+}
+
+input {
+  padding:12px;
+  margin:8px;
+  width:250px;
+  border-radius:6px;
+  border:none;
+}
+
+button {
+  padding:10px 15px;
+  margin:6px;
+  border:none;
+  border-radius:6px;
+  cursor:pointer;
+  background:#3b82f6;
+  color:white;
+}
+
+/* DASHBOARD */
+#dashboard {
+  display:none;
+}
+
+.header {
+  background:#020617;
+  padding:15px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+.container {
+  padding:20px;
+}
+
+.card {
+  background:#1e293b;
+  padding:20px;
+  border-radius:10px;
+  margin-bottom:20px;
+}
+
+.stats {
+  display:flex;
+  gap:20px;
+}
+
+.stat {
+  background:#334155;
+  padding:15px;
+  border-radius:8px;
+  flex:1;
+  text-align:center;
+}
+
+pre {
+  background:black;
+  padding:10px;
+  border-radius:6px;
+  overflow:auto;
+}
+</style>
+</head>
+
 <body>
 
-<h2>Simple System</h2>
+<!-- AUTH -->
+<div id="auth">
+  <h1>AI Civilization</h1>
 
-<input id="email" placeholder="email"><br>
-<input id="password" placeholder="password"><br>
+  <input id="email" placeholder="Email">
+  <input id="password" type="password" placeholder="Password">
 
-<button onclick="signup()">Signup</button>
-<button onclick="login()">Login</button>
-<button onclick="step()">Step</button>
+  <button onclick="signup()">Signup</button>
+  <button onclick="login()">Login</button>
 
-<pre id="out"></pre>
+  <pre id="authOut"></pre>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard">
+
+  <div class="header">
+    <h2>Dashboard</h2>
+    <button onclick="logout()">Logout</button>
+  </div>
+
+  <div class="container">
+
+    <div class="stats">
+      <div class="stat">Tick: <span id="tick">0</span></div>
+      <div class="stat">User: <span id="user">-</span></div>
+    </div>
+
+    <div class="card">
+      <h3>Simulation Control</h3>
+      <button onclick="runSim()">Run Simulation</button>
+    </div>
+
+    <div class="card">
+      <h3>Output</h3>
+      <pre id="output"></pre>
+    </div>
+
+  </div>
+</div>
 
 <script>
 const API = "https://ai-civilization-sim-production.up.railway.app";
 
-let key = "";
+let apiKey = "";
 
+/* UI CONTROL */
+function showDashboard() {
+  document.getElementById("auth").style.display = "none";
+  document.getElementById("dashboard").style.display = "block";
+}
+
+function showAuth() {
+  document.getElementById("auth").style.display = "flex";
+  document.getElementById("dashboard").style.display = "none";
+}
+
+/* SIGNUP */
 async function signup() {
   const res = await fetch(API + "/signup", {
     method: "POST",
@@ -29,10 +157,18 @@ async function signup() {
   });
 
   const data = await res.json();
-  key = data.api_key;
-  out.innerText = JSON.stringify(data);
+
+  if (data.status === "success") {
+    apiKey = data.api_key;
+    localStorage.setItem("api_key", apiKey);
+    showDashboard();
+  }
+
+  document.getElementById("authOut").innerText =
+    JSON.stringify(data, null, 2);
 }
 
+/* LOGIN */
 async function login() {
   const res = await fetch(API + "/login", {
     method: "POST",
@@ -44,15 +180,45 @@ async function login() {
   });
 
   const data = await res.json();
-  key = data.api_key;
-  out.innerText = JSON.stringify(data);
+
+  if (data.status === "success") {
+    apiKey = data.api_key;
+    localStorage.setItem("api_key", apiKey);
+    showDashboard();
+  }
+
+  document.getElementById("authOut").innerText =
+    JSON.stringify(data, null, 2);
 }
 
-async function step() {
-  const res = await fetch(API + "/step?api_key=" + key);
+/* SIMULATION */
+async function runSim() {
+  const res = await fetch(API + "/step?api_key=" + apiKey);
   const data = await res.json();
-  out.innerText = JSON.stringify(data);
+
+  document.getElementById("tick").innerText = data.tick;
+  document.getElementById("user").innerText = data.user;
+
+  document.getElementById("output").innerText =
+    JSON.stringify(data, null, 2);
 }
+
+/* LOGOUT */
+function logout() {
+  localStorage.removeItem("api_key");
+  apiKey = "";
+  showAuth();
+}
+
+/* AUTO LOGIN */
+window.onload = function() {
+  const saved = localStorage.getItem("api_key");
+
+  if (saved) {
+    apiKey = saved;
+    showDashboard();
+  }
+};
 </script>
 
 </body>
