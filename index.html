@@ -1,133 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>AI SaaS Platform</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+<style>
+body {
+  margin:0;
+  font-family:Arial;
+  background:#0f172a;
+  color:white;
+}
 
-app = FastAPI()
+/* AUTH */
+#auth {
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  height:100vh;
+}
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+input, select {
+  padding:12px;
+  margin:8px;
+  width:260px;
+  border-radius:6px;
+  border:none;
+}
 
-class User(BaseModel):
-    email: str
-    password: str
+button {
+  padding:10px 15px;
+  margin:6px;
+  border:none;
+  border-radius:6px;
+  background:#3b82f6;
+  color:white;
+  cursor:pointer;
+}
 
-class Payment(BaseModel):
-    api_key: str
-    method: str
-    amount: float
-    note: str
+/* DASHBOARD */
+#dashboard { display:none; }
 
-users = {}
-ticks = {}
-payments = []
+.header {
+  background:#020617;
+  padding:15px;
+  display:flex;
+  justify-content:space-between;
+}
 
-@app.get("/")
-def home():
-    return {"status": "running"}
+.container { padding:20px; }
 
+.card {
+  background:#1e293b;
+  padding:15px;
+  border-radius:8px;
+  margin-bottom:15px;
+}
 
-@app.post("/signup")
-def signup(user: User):
-    if user.email in users:
-        return {"status": "error"}
+.stats {
+  display:flex;
+  gap:10px;
+}
 
-    users[user.email] = {
-        "password": user.password,
-        "credits": 10,
-        "plan": "free"
-    }
+.stat {
+  background:#334155;
+  padding:15px;
+  border-radius:6px;
+  flex:1;
+  text-align:center;
+}
 
-    return {
-        "status": "success",
-        "api_key": user.email,
-        "credits": 10
-    }
+pre {
+  background:black;
+  padding:10px;
+  border-radius:6px;
+  overflow:auto;
+}
+</style>
+</head>
 
+<body>
 
-@app.post("/login")
-def login(user: User):
-    if user.email in users and users[user.email]["password"] == user.password:
-        return {
-            "status": "success",
-            "api_key": user.email,
-            "credits": users[user.email]["credits"],
-            "plan": users[user.email]["plan"]
-        }
+<!-- AUTH -->
+<div id="auth">
+  <h1>AI SaaS Platform</h1>
 
-    return {"status": "error"}
+  <input id="email" placeholder="Email">
+  <input id="password" type="password" placeholder="Password">
 
+  <button onclick="signup()">Signup</button>
+  <button onclick="login()">Login</button>
 
-@app.get("/step")
-def step(api_key: str):
-    if api_key not in users:
-        return {"error": "invalid"}
+  <pre id="authOut"></pre>
+</div>
 
-    if users[api_key]["credits"] <= 0:
-        return {"error": "no credits"}
+<!-- DASHBOARD -->
+<div id="dashboard">
 
-    users[api_key]["credits"] -= 1
-    ticks[api_key] = ticks.get(api_key, 0) + 1
+  <div class="header">
+    <h2>Dashboard</h2>
+    <button onclick="logout()">Logout</button>
+  </div>
 
-    return {
-        "tick": ticks[api_key],
-        "credits_left": users[api_key]["credits"],
-        "plan": users[api_key]["plan"]
-    }
+  <div class="container">
 
+    <!-- STATS -->
+    <div class="stats">
+      <div class="stat">Tick: <span id="tick">0</span></div>
+      <div class="stat">Credits: <span id="credits">0</span></div>
+    </div>
 
-# 💰 USER SUBMITS PAYMENT
-@app.post("/request-payment")
-def request_payment(payment: Payment):
-    payments.append({
-        "user": payment.api_key,
-        "method": payment.method,
-        "amount": payment.amount,
-        "note": payment.note,
-        "status": "pending"
+    <!-- SIMULATION -->
+    <div class="card">
+      <h3>Simulation</h3>
+      <button onclick="runSim()">Run Simulation</button>
+    </div>
+
+    <!-- PAYMENT -->
+    <div class="card">
+      <h3>Upgrade Plan</h3>
+
+      <select id="method">
+        <option>Bank Transfer</option>
+        <option>JazzCash</option>
+        <option>Easypaisa</option>
+        <option>Payoneer</option>
+      </select>
+
+      <input id="amount" placeholder="Amount (e.g. 10)">
+      <input id="note" placeholder="Transaction ID / Reference">
+
+      <button onclick="submitPayment()">Submit Payment</button>
+    </div>
+
+    <!-- OUTPUT -->
+    <div class="card">
+      <h3>Output</h3>
+      <pre id="output"></pre>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const API = "https://ai-civilization-sim-production.up.railway.app";
+
+let apiKey = "";
+
+/* UI CONTROL */
+function showDashboard() {
+  document.getElementById("auth").style.display = "none";
+  document.getElementById("dashboard").style.display = "block";
+}
+
+function showAuth() {
+  document.getElementById("auth").style.display = "flex";
+  document.getElementById("dashboard").style.display = "none";
+}
+
+/* SIGNUP */
+async function signup() {
+  const res = await fetch(API + "/signup", {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({
+      email: document.getElementById("email").value,
+      password: document.getElementById("password").value
     })
+  });
 
-    return {"status": "submitted"}
+  const data = await res.json();
 
+  if (data.status === "success") {
+    apiKey = data.api_key;
+    localStorage.setItem("api_key", apiKey);
+    document.getElementById("credits").innerText = data.credits;
+    showDashboard();
+  }
 
-# 🧑‍💼 ADMIN APPROVES PAYMENT (MANUAL)
-@app.post("/approve")
-def approve(index: int):
-    if index >= len(payments):
-        return {"error": "invalid index"}
+  document.getElementById("authOut").innerText =
+    JSON.stringify(data, null, 2);
+}
 
-    payment = payments[index]
-    user = payment["user"]
+/* LOGIN */
+async function login() {
+  const res = await fetch(API + "/login", {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({
+      email: document.getElementById("email").value,
+      password: document.getElementById("password").value
+    })
+  });
 
-    users[user]["credits"] += 100
-    users[user]["plan"] = "pro"
+  const data = await res.json();
 
-    payment["status"] = "approved"
+  if (data.status === "success") {
+    apiKey = data.api_key;
+    localStorage.setItem("api_key", apiKey);
+    document.getElementById("credits").innerText = data.credits;
+    showDashboard();
+  }
 
-    return {"status": "approved"}
+  document.getElementById("authOut").innerText =
+    JSON.stringify(data, null, 2);
+}
 
+/* SIMULATION */
+async function runSim() {
+  const res = await fetch(API + "/step?api_key=" + apiKey);
+  const data = await res.json();
 
-# 📋 VIEW PAYMENTS (ADMIN)
-@app.get("/payments")
-def get_payments():
-    return payments
-      <h3>Upgrade</h3>
+  if (data.error) {
+    document.getElementById("output").innerText =
+      "❌ " + data.error;
+    return;
+  }
 
-<select id="method">
-  <option>Easypaisa</option>
-  <option>JazzCash</option>
-  <option>Payoneer</option>
-</select>
+  document.getElementById("tick").innerText = data.tick;
+  document.getElementById("credits").innerText = data.credits_left;
 
-<input id="amount" placeholder="Amount">
-<input id="note" placeholder="Transaction ID / Note">
+  document.getElementById("output").innerText =
+    JSON.stringify(data, null, 2);
+}
 
-      async function submitPayment() {
+/* PAYMENT */
+async function submitPayment() {
   const res = await fetch(API + "/request-payment", {
     method: "POST",
     headers: {"Content-Type":"application/json"},
@@ -144,4 +244,23 @@ def get_payments():
   document.getElementById("output").innerText =
     JSON.stringify(data, null, 2);
 }
-<button onclick="submitPayment()">Submit Payment</button>
+
+/* LOGOUT */
+function logout() {
+  localStorage.removeItem("api_key");
+  apiKey = "";
+  showAuth();
+}
+
+/* AUTO LOGIN */
+window.onload = function() {
+  const saved = localStorage.getItem("api_key");
+  if (saved) {
+    apiKey = saved;
+    showDashboard();
+  }
+};
+</script>
+
+</body>
+</html>
