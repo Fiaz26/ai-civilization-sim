@@ -1,7 +1,34 @@
-from fastapi import FastAPI
+from pydantic import BaseModel
 
-app = FastAPI()
+class User(BaseModel):
+    email: str
+    password: str
 
-@app.get("/")
-def home():
-    return {"status": "running"}
+users = {}
+
+@app.post("/signup")
+def signup(user: User):
+    if user.email in users:
+        return {"status": "error"}
+
+    users[user.email] = {
+        "password": user.password,
+        "credits": 10
+    }
+
+    return {
+        "status": "success",
+        "api_key": user.email,
+        "credits": 10
+    }
+
+@app.post("/login")
+def login(user: User):
+    if user.email in users and users[user.email]["password"] == user.password:
+        return {
+            "status": "success",
+            "api_key": user.email,
+            "credits": users[user.email]["credits"]
+        }
+
+    return {"status": "error"}
