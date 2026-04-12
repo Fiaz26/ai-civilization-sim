@@ -20,7 +20,8 @@ cursor.execute("""
 CREATE TABLE IF NOT EXISTS users (
     email TEXT PRIMARY KEY,
     password TEXT,
-    credits INTEGER DEFAULT 10
+    credits INTEGER DEFAULT 10,
+    plan TEXT DEFAULT 'free'
 )
 """)
 conn.commit()
@@ -59,17 +60,22 @@ tick_store = {}
 
 @app.get("/step")
 def step(api_key: str):
-    cursor.execute("SELECT credits FROM users WHERE email=?", (api_key,))
+    cursor.execute("SELECT credits, plan FROM users WHERE email=?", (api_key,))
     user = cursor.fetchone()
 
     if not user:
         return {"error": "Invalid key"}
 
-    credits = user[0]
+    credits, plan = user
 
-    if credits <= 0:
-        return {"error": "No credits"}
+    # FREE LIMIT
+    if plan == "free" and credits <= 0:
+        return {
+            "error": "Upgrade required",
+            "upgrade": true
+        }
 
+    global tick_store
     tick_store[api_key] = tick_store.get(api_key, 0) + 1
 
     cursor.execute(
@@ -80,6 +86,15 @@ def step(api_key: str):
 
     return {
         "tick": tick_store[api_key],
-        "credits_left": credits - 1
-    }
+        "credits_left": credits - 1,
+        "plan": plan
+    @app.post("/upgrade")
+def upgrade(api_key: str):
+    cursor.execute(
+        "UPDATE users SET plan='pro', credits=100 WHERE email=?",
+        (api_key,)
+    )
+    conn.commit()
+
+    return {"status": "upgraded"}
     
